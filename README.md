@@ -1,2 +1,2 @@
 # rag-aws-portfolio
-RAG（AIエージェント）アプリケーション開発
+RAG（AIエージェント）アプリケーション開発1
