@@ -1,0 +1,13 @@
+# .gitignore
+
+# Python
+.venv/
+venv/
+__pycache__/
+
+# Node
+node_modules/
+.next/
+
+# macOS
+.DS_Store
