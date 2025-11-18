@@ -1,5 +1,4 @@
 // client/app/page.tsx
-
 // 1. Next.jsに、このファイルが「ブラウザ側で動く」ことを教えます
 "use client"; 
 

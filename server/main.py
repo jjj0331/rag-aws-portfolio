@@ -1,7 +1,10 @@
 # server/main.py
 
 from fastapi import FastAPI
+# POSTからの送信のバリデーション検証のメソッドをインポート
 from pydantic import BaseModel
+
+# CROSチェックのメソットをインポート
 from fastapi.middleware.cors import CORSMiddleware # 1. CORSミドルウェアをimport
 
 app = FastAPI()
