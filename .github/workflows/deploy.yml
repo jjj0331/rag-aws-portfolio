@@ -1,0 +1,86 @@
+# .github/workflows/deploy.yml
+
+name: CI/CD Pipeline for RAG App
+
+# 1. トリガー（いつ動くか？）
+on:
+  push:
+    branches:
+      - develop  # developブランチにpushされた時
+
+jobs:
+  # 2. 最初の仕事: CI（テスト）
+  ci:
+    runs-on: ubuntu-latest # GitHubが用意するLinuxサーバーで実行
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9' 
+
+      - name: Install Python dependencies
+        run: |
+          cd server
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      
+      - name: Run Python tests
+        run: |
+          cd server
+          source .venv/bin/activate
+          pytest
+
+  # 3. 2番目の仕事: CD（デプロイ）
+  cd:
+    # `ci`ジョブが「成功したら」実行する
+    needs: ci 
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # (Next.jsのビルドをGitHub側で行い、EC2の負荷を減らす)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # nvmで入れたバージョンと合わせる
+      - name: Build Next.js
+        run: |
+          cd client
+          npm install
+          npm run build
+
+      # (ここからがEC2へのデプロイ作業)
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_HOST_IP }}
+          username: ${{ secrets.AWS_SSH_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          
+          # EC2サーバー上で実行するコマンド
+          script: |
+            # プロジェクトフォルダに移動
+            cd rag-aws-portfolio
+            
+            # GitHubから最新のコードをPULL
+            git pull origin develop
+            
+            # Backendのインストール（venvは作成済みなのでactivateだけ）
+            cd server
+            source .venv/bin/activate
+            pip install -r requirements.txt
+            
+            # Frontendのインストール（buildはGitHub側でやったので不要）
+            cd ../client
+            npm install
+            
+            # サーバーを再起動
+            # (これは後でpm2などに置き換えますが、今はNginxだけ再起動)
+            sudo systemctl restart nginx
